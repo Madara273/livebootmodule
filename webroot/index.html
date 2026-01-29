@@ -1,5 +1,426 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-<meta http-equiv="refresh" content="0.001;URL=https://github.com/symbuzzer/livebootmodule"> 
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Live Boot Control</title>
+
+    <style>
+        :root { --gr: #2ecc71; --bg: #000; --pan: #161616; }
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            background: var(--bg);
+            color: var(--gr);
+            font-family: sans-serif;
+            font-size: 13px;
+            overflow: hidden;
+        }
+
+        body {
+            padding: 12px;
+            padding-top: 60px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        main {
+            flex: 1;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .main-title {
+            text-align: center;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            opacity: 0.5;
+            margin: 5px 0 16px 0;
+            font-size: 20px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: var(--bg);
+            padding: 8px 12px;
+            z-index: 10;
+        }
+
+        .btns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        button {
+            background: transparent;
+            border: 2px solid var(--gr);
+            color: var(--gr);
+            padding: 12px;
+            border-radius: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            cursor: pointer;
+        }
+
+        .selector-btn {
+            background: var(--pan);
+            border: 1px solid #333;
+            color: var(--gr);
+            padding: 10px 16px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: bold;
+            width: 100%;
+            text-align: center;
+        }
+
+        .label {
+            font-size: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+            opacity: 0.8;
+            margin: 8px 0 4px 5px;
+        }
+
+        .panel {
+            background: var(--pan);
+            border-radius: 16px;
+            border: 1px solid #222;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            color: var(--gr); /* Текст пунктів тепер зелений */
+            border-bottom: 1px solid #222;
+        }
+
+        input[type="checkbox"], input[type="radio"] {
+            accent-color: var(--gr);
+            width: 18px;
+            height: 18px;
+        }
+
+        .input-f {
+            width: 100%;
+            background: #000;
+            border: 1px solid #222;
+            border-radius: 12px;
+            padding: 10px 12px;
+            color: var(--gr);
+            font-size: 14px;
+        }
+
+        .dropdown-wrapper {
+            position: relative;
+            flex: 1;
+        }
+
+        .floating-list {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: #000;
+            border: 1px solid #333;
+            border-radius: 12px;
+            z-index: 100;
+            display: none;
+            margin-top: 5px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.9);
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        .opt-item {
+            padding: 10px 12px;
+            color: var(--gr);
+            cursor: pointer;
+            border-bottom: 1px solid #111;
+        }
+
+        .opt-item:last-child { border-bottom: none; }
+
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        #console {
+            width: 100%;
+            min-height: 80px;
+            max-height: 30vh;
+            background: #000;
+            border: 1px solid #222;
+            border-radius: 16px;
+            padding: 15px;
+            color: #888;
+            font-size: 11px;
+            font-family: monospace;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            margin: 8px 0 16px 0;
+        }
+
+        #floating-input-wrapper {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: #111;
+            border-bottom: 2px solid var(--gr);
+            padding: 8px 12px;
+            z-index: 9999;
+            display: none;
+        }
+
+        #floating-input {
+            width: 100%;
+            font-size: 16px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--gr);
+            background: #000;
+            color: var(--gr);
+        }
+    </style>
 </head>
+<body>
+
+    <div id="floating-input-wrapper">
+        <input type="text" id="floating-input" autocomplete="off">
+    </div>
+
+    <main>
+        <div class="main-title">Live Boot Control</div>
+
+        <div class="btns">
+            <button id="apply">APPLY</button>
+            <button onclick="location.reload()">REFRESH</button>
+        </div>
+
+        <div class="label">BACKGROUND COLOR</div>
+        <div class="panel">
+            <label class="row"><span>Default (Gray)</span><input type="radio" name="bg" value="" checked></label>
+            <label class="row"><span>Dark</span><input type="radio" name="bg" value="dark"></label>
+            <label class="row"><span>Transparent</span><input type="radio" name="bg" value="transparent"></label>
+        </div>
+
+        <div class="label">LEVELS & BUFFERS</div>
+        <div class="panel" style="overflow: visible;">
+            <div style="padding: 12px; display: flex; gap: 10px;">
+                <div class="dropdown-wrapper">
+                    <button class="selector-btn" onclick="toggleFloat('lvls-list', event)">LEVELS</button>
+                    <div id="lvls-list" class="floating-list">
+                        <label class="row"><span>Verbose</span><input type="checkbox" value="V"></label>
+                        <label class="row"><span>Debug</span><input type="checkbox" value="D"></label>
+                        <label class="row"><span>Info</span><input type="checkbox" value="I"></label>
+                        <label class="row"><span>Warning</span><input type="checkbox" value="W"></label>
+                        <label class="row"><span>Error</span><input type="checkbox" value="E"></label>
+                        <label class="row"><span>Fatal</span><input type="checkbox" value="F"></label>
+                        <label class="row"><span>Silent</span><input type="checkbox" value="S"></label>
+                    </div>
+                </div>
+
+                <div class="dropdown-wrapper">
+                    <button class="selector-btn" onclick="toggleFloat('bufs-list', event)">BUFFERS</button>
+                    <div id="bufs-list" class="floating-list">
+                        <label class="row"><span>Main</span><input type="checkbox" value="M"></label>
+                        <label class="row"><span>System</span><input type="checkbox" value="S"></label>
+                        <label class="row"><span>Radio</span><input type="checkbox" value="R"></label>
+                        <label class="row"><span>Events</span><input type="checkbox" value="E"></label>
+                        <label class="row"><span>Crash</span><input type="checkbox" value="C"></label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="label">LOGCAT OPTIONS</div>
+        <div class="panel" style="overflow: visible;">
+            <div class="row" style="border:none; padding: 10px; overflow: visible;">
+                <div class="dropdown-wrapper" style="max-width: 50%;">
+                    <div id="logcat-trigger" class="input-f" style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+                        <span id="current-fmt">threadtime</span>
+                        <span style="font-size: 8px; opacity: 0.6;">▼</span>
+                    </div>
+                    <div id="logcat-options" class="floating-list">
+                        <div class="opt-item" data-value="threadtime">threadtime</div>
+                        <div class="opt-item" data-value="brief">brief</div>
+                        <div class="opt-item" data-value="process">process</div>
+                        <div class="opt-item" data-value="tag">tag</div>
+                        <div class="opt-item" data-value="thread">thread</div>
+                        <div class="opt-item" data-value="time">time</div>
+                    </div>
+                    <input type="hidden" id="fmt" value="threadtime">
+                </div>
+                <div style="display:flex; gap:8px;">
+                    <label style="font-size:9px; display:flex; align-items:center; gap:2px;"><input type="checkbox" id="clr" checked> CLR</label>
+                    <label style="font-size:9px; display:flex; align-items:center; gap:2px;"><input type="checkbox" id="wrp" checked> WRP</label>
+                    <label style="font-size:9px; display:flex; align-items:center; gap:2px;"><input type="checkbox" id="sav" checked> SAV</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="two-col">
+            <div><div class="label">DMESG</div><input type="text" id="dmg" class="input-f" value="0-99"></div>
+            <div><div class="label">LINES</div><input type="number" id="lns" class="input-f" value="80"></div>
+        </div>
+
+        <div class="two-col">
+            <div><div class="label">WIDTH</div><input type="number" id="w" class="input-f" value="1080"></div>
+            <div><div class="label">HEIGHT</div><input type="number" id="h" class="input-f" value="2340"></div>
+        </div>
+
+        <div class="label">CONSOLE / CURRENT CONFIG</div>
+        <div id="console">Waiting...</div>
+    </main>
+
+    <script>
+        const P = "/data/adb/modules/livebootmagisk/config";
+
+        function toggleFloat(id, event) {
+            if (event) event.stopPropagation();
+            const el = document.getElementById(id);
+            const isVisible = el.style.display === 'block';
+            document.querySelectorAll('.floating-list').forEach(list => list.style.display = 'none');
+            el.style.display = isVisible ? 'none' : 'block';
+        }
+
+        const logcatTrigger = document.getElementById('logcat-trigger');
+        const fmtHidden = document.getElementById('fmt');
+        const currentText = document.getElementById('current-fmt');
+
+        logcatTrigger.onclick = (e) => toggleFloat('logcat-options', e);
+
+        document.querySelectorAll('#logcat-options .opt-item').forEach(item => {
+            item.onclick = function(e) {
+                e.stopPropagation();
+                const val = this.getAttribute('data-value');
+                currentText.textContent = val;
+                fmtHidden.value = val;
+                document.getElementById('logcat-options').style.display = 'none';
+            };
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.dropdown-wrapper')) {
+                document.querySelectorAll('.floating-list').forEach(list => list.style.display = 'none');
+            }
+        });
+
+        const floatWrapper = document.getElementById('floating-input-wrapper');
+        const floatInput = document.getElementById('floating-input');
+        let activeOriginalInput = null;
+
+        function openFloatingInput(original) {
+            activeOriginalInput = original;
+            floatInput.value = original.value || '';
+            floatInput.type = original.type;
+            floatWrapper.style.display = 'block';
+            floatInput.focus();
+            floatInput.select();
+        }
+
+        function closeFloatingInput() {
+            if (activeOriginalInput) activeOriginalInput.value = floatInput.value;
+            floatWrapper.style.display = 'none';
+            activeOriginalInput = null;
+        }
+
+        document.querySelectorAll('#dmg, #lns, #w, #h').forEach(input => {
+            input.addEventListener('focus', function(e) {
+                e.preventDefault(); this.blur();
+                openFloatingInput(this);
+            });
+        });
+
+        floatInput.addEventListener('blur', closeFloatingInput);
+        floatInput.addEventListener('keydown', e => { if (e.key === 'Enter') closeFloatingInput(); });
+
+        function exec(cmd) {
+            return new Promise((resolve, reject) => {
+                const callback = `cb_${Date.now()}_${Math.floor(Math.random()*1000)}`;
+                window[callback] = (errno, stdout, stderr) => {
+                    delete window[callback];
+                    if (errno !== 0) reject(new Error(stderr || stdout));
+                    else resolve(stdout);
+                };
+                if (typeof ksu !== 'undefined' && ksu.exec) ksu.exec(cmd, "{}", callback);
+                else reject(new Error("KSU not found"));
+            });
+        }
+
+        async function load() {
+            const consoleEl = document.getElementById('console');
+            try {
+                const res = await exec(`cat ${P}`);
+                if (res) {
+                    consoleEl.textContent = res.trim();
+                    const lines = res.split('\n').map(l => l.trim());
+                    document.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = false);
+                    lines.forEach(l => {
+                        if (l === "dark" || l === "transparent") document.querySelector(`input[name="bg"][value="${l}"]`).checked = true;
+                        if (l.startsWith("logcatlevels=")) {
+                            const v = l.split('=')[1];
+                            document.querySelectorAll('#lvls-list input').forEach(i => i.checked = v.includes(i.value));
+                        }
+                        if (l.startsWith("logcatbuffers=")) {
+                            const v = l.split('=')[1];
+                            document.querySelectorAll('#bufs-list input').forEach(i => i.checked = v.includes(i.value));
+                        }
+                        if (l.startsWith("logcatformat=")) {
+                            const val = l.split('=')[1];
+                            fmtHidden.value = val; currentText.textContent = val;
+                        }
+                        if (l === "colors") document.getElementById('clr').checked = true;
+                        if (l === "logcatnocolors") document.getElementById('clr').checked = false;
+                        if (l === "wordwrap") document.getElementById('wrp').checked = true;
+                        if (l === "save") document.getElementById('sav').checked = true;
+                        if (l.startsWith("dmesg=")) document.getElementById('dmg').value = l.split('=')[1];
+                        if (l.startsWith("lines=")) document.getElementById('lns').value = l.split('=')[1];
+                        if (l.startsWith("fallbackwidth=")) document.getElementById('w').value = l.split('=')[1];
+                        if (l.startsWith("fallbackheight=")) document.getElementById('h').value = l.split('=')[1];
+                    });
+                }
+            } catch (err) { consoleEl.textContent = "Error: " + err.message; }
+        }
+
+        document.getElementById('apply').onclick = async () => {
+            const consoleEl = document.getElementById('console');
+            consoleEl.textContent = "[*] Saving...";
+            const bg = document.querySelector('input[name="bg"]:checked').value;
+            const lv = Array.from(document.querySelectorAll('#lvls-list input:checked')).map(i => i.value).join('');
+            const bu = Array.from(document.querySelectorAll('#bufs-list input:checked')).map(i => i.value).join('');
+            let c = [];
+            if (bg) c.push(bg);
+            c.push(`logcatlevels=${lv}`, `logcatbuffers=${bu}`, `logcatformat=${fmtHidden.value}`);
+            c.push(document.getElementById('clr').checked ? "colors" : "logcatnocolors");
+            c.push(`dmesg=${document.getElementById('dmg').value}`, `lines=${document.getElementById('lns').value}`);
+            if (document.getElementById('wrp').checked) c.push("wordwrap");
+            if (document.getElementById('sav').checked) c.push("save");
+            c.push(`fallbackwidth=${document.getElementById('w').value}`, `fallbackheight=${document.getElementById('h').value}`);
+            const data = c.join('\n');
+            try {
+                await exec(`printf '${data.replace(/\n/g, '\\n')}\\n' > ${P}`);
+                consoleEl.textContent = "[✓] Saved:\n" + data;
+            } catch (err) { consoleEl.textContent = "[!] Error: " + err.message; }
+        };
+
+        window.onload = load;
+    </script>
+</body>
 </html>
+
